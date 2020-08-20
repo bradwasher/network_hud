@@ -1,5 +1,5 @@
 # network_hud
-A python/linux based network heads up display.
+A python/linux based network heads up display that passively monitors traffic on your local network and identifies devices, their IP addresses, MAC addresses, interface manufacturer, and discovery protocol data.
 
 Required Python3 Modules:
 1. npyscreen -> pip3 install npyscreen
