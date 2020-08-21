@@ -20,6 +20,6 @@ view collected device data -> select device from the list of network devices and
 
 Discovery Protocols Collected:
 1. Cisco Discovery Protocol
-2. TivoConnect Discovery Protocol
+2. TivoConnect Discovery Protocol - can be used to identify model numbers in some Netgear devices
 3. MikroTik Discovery Protocol (in development)
 4. Link Layer Discovery Protocol (in development)
