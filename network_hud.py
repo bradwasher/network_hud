@@ -45,6 +45,7 @@ def main():
         if auto_scanner is not None:
             auto_scanner.stop()
 
+
 def get_args():
     """
     Get and validate command line arguments and return dictionary of those key/values
@@ -84,10 +85,6 @@ def get_args():
 
 
     return args
-
-
-def dprint(string):
-    __builtins__.print("%f -- %s" % (time.time(), string))
 
 
 if __name__ == "__main__":

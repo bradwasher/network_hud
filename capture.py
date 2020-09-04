@@ -10,21 +10,27 @@ class Capture(threading.Thread):
 
         threading.Thread.__init__(self)
 
-        self.oui_lookup = oui_lookup
-        self.port_lookup = port_lookup
-        self.network_info = network_info
         self.interface = interface
         self.data_collection = data_collection
+        self.network_info = network_info
+        self.oui_lookup = oui_lookup
+        self.port_lookup = port_lookup
         self.description = description
 
         self._running = False
 
-        self.data_collection.collect = self.get_network_stub()
-        self.current_network = self.network_info.network_string
+        self.data_collection.collect = self.get_collection_stub()
+        self.current_network = None
 
     def run(self):
         self._running = True
+        net = self.network_info.network
+        netstring = self.network_info.network_string
+        while self.network_info.network is None:
+            time.sleep(1)
+
         sniff(iface=self.interface, prn=self._packet_handler, store=0, count=0)
+
 
     def stop(self):
         self._running = False
@@ -34,65 +40,30 @@ class Capture(threading.Thread):
 
     def _packet_handler(self, pkt):
 
+        # check if device network switched
+        self._check_current_network()
+
         if pkt.haslayer(IP):
-            #check source IP
+            # check source IP
             if self.network_info.ip_in_network(pkt[IP].src):
-                # IP is in local network
+                # source IP is in local network
                 self._process_local_device(pkt)
             else:
                 # source IP is not in local network
                 self._process_external_device(pkt)
-
-            #
-            #if self.network_info.ip_in_network(pkt[IP].dst):
-            #    # IP is in local network
-            #    self._process_local_device(pkt, 'dst')
-
-            #don't process destination IP's out of the network
-            #else:
-            #    # source IP is not in local network
-            #    self._process_external_device(pkt, 'dst')
         else:
-            #no IP, so process source and destination as local devices
+            # no IP, so process as local devices
             self._process_local_device(pkt)
-            #self._process_local_device(pkt, 'dst')
 
-
-            # 01:00:0c:cc:cc:cc -> CDP
-
-        """
-        if pkt.haslayer(EAPOL):
-            print(f"EAPOL - {str(timestamp)}")
-            record = self._create_record(pkt, timestamp)
-            record['record_type'] = 'eapol'
-            eapol = []
-            for x in pkt.getlayer(Raw):
-                eapol.append(x.load.hex())
-            if len(eapol) > 0:
-                record['eapol'] = ''.join(eapol)
-
-        elif self.mode == 'target-list':
-            target = self._target_found(pkt)
-            if target and _allow_collect(target, timestamp):
-                record = self._create_record(pkt, timestamp)
-                record['record_type'] = 'target-hit'
-                record['target_hit'] = {}
-                record['target_hit']['target'] = target
-
-        elif self.mode == 'all-selectors':
-            record = self._create_record(pkt, timestamp)
-            record['record_type'] = 'selector-collect'
-
-            collect = False
-            for identifier in record['macs']:
-                if self._allow_collect(identifier, timestamp):
-                    collect = True
-            if not collect:
-                record = None
-
-        if record:
-            self.api.queue_record(record)
-        """
+    def _check_current_network(self):
+        interface_network_string = self.network_info.network_string
+        if self.current_network != interface_network_string and interface_network_string != 'None':
+            # set current network to network value of the interface
+            self.current_network = interface_network_string
+            # if this network isn't in collection, then add it
+            if self.current_network is not None and self.current_network not in self.data_collection.collect['local_networks']:
+                network_stub = self.get_network_stub()
+                self.data_collection.collect['local_networks'][self.current_network] = network_stub[self.current_network]
 
     def _process_local_device(self, pkt):
         # only processing data from the source side
@@ -129,14 +100,16 @@ class Capture(threading.Thread):
             dev['last_seen'] = ZuluTime.get_timestamp()
 
         if pkt.haslayer(TCP):
+            flags = str(pkt[TCP].flags)
             port = pkt[TCP].sport
-
-            service = self.port_lookup.get_service_by_port(port, 'tcp')
-            if service:
-                if service not in dev['protocols_seen']:
-                    dev['protocols_seen'].append(service)
-                if port not in dev['open_tcp_ports']:
-                    dev['open_tcp_ports'].append(port)
+            if 'R' not in flags:
+                # don't process if it's a reset flag
+                service = self.port_lookup.get_service_by_port(port, 'tcp')
+                if service:
+                    if service not in dev['protocols_seen']:
+                        dev['protocols_seen'].append(service)
+                    if port not in dev['open_tcp_ports']:
+                        dev['open_tcp_ports'].append(port)
 
         if pkt.haslayer(UDP):
             port = pkt[UDP].sport
@@ -150,17 +123,21 @@ class Capture(threading.Thread):
 
             #check for mDNS or DNS replies
             if pkt.haslayer(DNS) and pkt[DNS].qr == 1:
-                for x in range(pkt[DNS].ancount):
-                    # if the response IP matches the packet source IP, then append the hostname of the device
-                    if pkt[DNS].an[x].rdata == ip:
-                        dev['host_name'] = pkt[DNS].an[x].rrname.decode()
+                try:
+                    for x in range(pkt[DNS].ancount):
+                        # if the response IP matches the packet source IP, then append the hostname of the device
+                        if pkt[DNS].an[x].rdata == ip:
+                            dev['host_name'] = pkt[DNS].an[x].rrname.decode()
                         break
+                except:  # got 'non-iterable' exception for 'pkt[DNS].an[x].rdata == ip:'
+                    pass
 
             #check for TivoConnect Discovery Protocol (on Netgear devices)
             if pkt[UDP].sport == 2190:
                 tcdp = self._extract_tcdp(pkt)
                 if tcdp is not None and tcdp not in dev['data_collect']:
                     dev['data_collect'].append(tcdp)
+
 
         # check for CDP data
         if pkt.dst == '01:00:0c:cc:cc:cc':
@@ -172,11 +149,23 @@ class Capture(threading.Thread):
 
         # check for LLDP
         if pkt.haslayer(LLDPDU):
-            lldp_data = self._extract_lldp(pkt)
+            hostname, lldp_data = self._extract_lldp(pkt)
+            if hostname is not None:
+                dev['host_name'] = hostname
             if lldp_data is not None and lldp_data not in dev['data_collect']:
                 dev['data_collect'].append(lldp_data)
 
         self.data_collection.collect['local_networks'][self.current_network]['devices'][mac] = dev
+
+        # check for EAPOL
+        """
+        if pkt.haslayer(EAPOL):
+            eapol = []
+            for x in pkt.getlayer(Raw):
+                eapol.append(x.load.hex())
+            if len(eapol) > 0:
+                record['eapol'] = ''.join(eapol)
+        """
 
     def _process_external_device(self, pkt):
         # only process from source side
@@ -196,13 +185,17 @@ class Capture(threading.Thread):
             dev['last_seen'] = ZuluTime.get_timestamp()
 
         if pkt.haslayer(TCP):
+            flags = str(pkt[TCP].flags)
             port = pkt[TCP].sport
-            service = self.port_lookup.get_service_by_port(port, 'tcp')
-            if service:
-                if service not in dev['protocols_seen']:
-                    dev['protocols_seen'].append(service)
-                if port not in dev['open_tcp_ports']:
-                    dev['open_tcp_ports'].append(port)
+            if 'R' not in flags:
+                # don't process if it's a reset
+                service = self.port_lookup.get_service_by_port(port, 'tcp')
+                if service:
+                    if service not in dev['protocols_seen']:
+                        dev['protocols_seen'].append(service)
+                    if port not in dev['open_tcp_ports']:
+                        dev['open_tcp_ports'].append(port)
+
         if pkt.haslayer(UDP):
             port = pkt[UDP].sport
             service = self.port_lookup.get_service_by_port(port, 'udp')
@@ -215,32 +208,30 @@ class Capture(threading.Thread):
         self.data_collection.collect['external_devices'][ip] = dev
 
     def _extract_cdp(self, pkt):
-        #print('****FOUND CDP****')
-        # CDPv2HDR
-        #if pkt.haslayer(CDPv2_HDR):
-        #    cdp = pkt[CDPv2_HDR]
         hostname = None
         data = []
 
-        #device ID / hostname
+        # device ID / hostname
         if pkt.haslayer(CDPMsgDeviceID):
             hostname = pkt[CDPMsgDeviceID].val.decode()
             #device_id = pkt[CDPMsgDeviceID].val.decode()
             #data.append(f'device id: {device_id}')
 
-        #platform
+        # platform
         if pkt.haslayer(CDPMsgPlatform):
             platform = pkt[CDPMsgPlatform].val.decode().upper().replace('CISCO', '')
             data.append(f'platform: {platform}')
 
-        #software version
+        # software version
         if pkt.haslayer(CDPMsgSoftwareVersion):
-            version_values = pkt[CDPMsgSoftwareVersion].val.decode()
-            software_version = [x for x in version_values.split(',') if 'VERSION' in x.upper()]
-            if len(software_version) > 0:
-                data.append(f'version: {software_version[0].strip().upper().replace("VERSION", "")}')
+            version = pkt[CDPMsgSoftwareVersion].val.decode()
+            data.append(f'version: {version}')
+            #version_values = pkt[CDPMsgSoftwareVersion].val.decode()
+            #software_version = [x for x in version_values.split(',') if 'VERSION' in x.upper()]
+            #if len(software_version) > 0:
+            #    data.append(f'version: {software_version[0].strip().upper().replace("VERSION", "")}')
 
-        #management address
+        # management address
         if pkt.haslayer(CDPMsgMgmtAddr):
             management_address = pkt[CDPMsgMgmtAddr].addr
             for x in management_address:
@@ -248,7 +239,15 @@ class Capture(threading.Thread):
             addresses = ', '.join([x.addr for x in management_address])
             data.append(f'management address: {addresses}')
 
-        #capabilities
+        # addresses
+        if pkt.haslayer(CDPMsgAddr):
+            address = pkt[CDPMsgAddr].addr
+            for x in address:
+                pass
+            addresses = ', '.join([x.addr for x in address])
+            data.append(f'addresses: {addresses}')
+
+        # capabilities
         if pkt.haslayer(CDPMsgCapabilities):
             capabilities = str(pkt[CDPMsgCapabilities].cap)
             data.append(f'capabilities: {capabilities}')
@@ -272,25 +271,110 @@ class Capture(threading.Thread):
         """
 
         if len(data) > 0:
-            cdp_data = 'CDP - (' + '; '.join(data) + ')'
+            cdp_data = 'CDP {' + '; '.join(data) + '}'
             return hostname, cdp_data
         else:
             return None, None
 
     def _extract_lldp(self, pkt):
-        # need to build out
-        return None
+        hostname = None
+        data = []
+
+        '''
+        # LLDPConfiguration
+        if pkt.haslayer(LLDPConfiguration):
+            config = pkt[LLDPConfiguration]
+            data.append(f'config: {config}')
+
+        # LLDPDUChassisID
+        if pkt.haslayer(LLDPDUChassisID):
+            chassis_id = pkt[LLDPDUChassisID]
+            data.append(f'chassis id: {chassis_id}')
+
+        # LLDPDUManagementAddress
+        if pkt.haslayer(LLDPDUManagementAddress):
+            mngt = pkt[LLDPDUManagementAddress]
+            data.append(f'mngt add: {mngt}')
+
+        # LLDPDUSystemCapabilities
+        if pkt.haslayer(LLDPDUSystemCapabilities):
+            capabilities = pkt[LLDPDUSystemCapabilities]
+            data.append(f'capabilities: {capabilities}')
+        '''
+        # LLDPDUSystemDescription
+        if pkt.haslayer(LLDPDUSystemDescription):
+            desc = pkt[LLDPDUSystemDescription].description.decode()
+            desc_str = str(desc)
+            data.append(f'system: {desc}')
+        '''
+        # LLDPDUSystemName
+        if pkt.haslayer(LLDPDUSystemName):
+            name = pkt[LLDPDUSystemName]
+            data.append(f'name: {name}')
+            hostname = name
+        
+            LLDPDUEndOfLLDPDU
+            LLDPDUGenericOrganisationSpecific
+            LLDPDUManagementAddress
+                SUBTYPE_MANAGEMENT_ADDRESS_IPV4
+            LLDPDUPortDescription
+            LLDPDUPortID
+            LLDPDUSystemCapabilities
+            LLDPDUSystemDescription
+            LLDPDUSystemName
+        '''
+        if len(data) > 0:
+            llpd_data = 'LLDP {' + '; '.join(data) + '}'
+            return hostname, llpd_data
+        else:
+            return None, None
 
     def _extract_tcdp(self, pkt):
         try:
             tcdp = pkt[Raw].load.decode().replace('\n', '; ').strip()
-            tcdp = f'TCDP - ({tcdp})'
+            tcdp = f'TCDP {{{tcdp}}}'
             return tcdp
         except:
             return None
 
+    def get_collection_stub(self):
+        stub = {'local_networks': {}, 'external_devices': {}}
+
+        return stub
 
     def get_network_stub(self):
+        network_id = self.network_info.network_string
+        mac = self.network_info.mac
+        ip = self.network_info.ip
+        interface_name = self.network_info.interface_name
+        manufacturer = self.network_info.manufacturer
+        host_name = self.network_info.hostname
+
+        stub = {}
+
+        stub[network_id] = {}
+        stub[network_id]['network_id'] = network_id
+        stub[network_id]['interface'] = interface_name
+        stub[network_id]['ip_address'] = ip
+        stub[network_id]['mac_address'] = mac
+        stub[network_id]['devices'] = {}
+        stub[network_id]['devices'][mac] = {}
+
+        stub[network_id]['devices'][mac]['mac_address'] = mac
+        stub[network_id]['devices'][mac]['ip_address'] = ip
+        stub[network_id]['devices'][mac]['manufacturer'] = manufacturer
+        stub[network_id]['devices'][mac]['host_name'] = host_name
+        stub[network_id]['devices'][mac]['connection_type'] = ''
+        stub[network_id]['devices'][mac]['is_you'] = True
+        stub[network_id]['devices'][mac]['protocols_seen'] = []
+        stub[network_id]['devices'][mac]['open_tcp_ports'] = []
+        stub[network_id]['devices'][mac]['open_udp_ports'] = []
+        stub[network_id]['devices'][mac]['data_collect'] = []
+        stub[network_id]['devices'][mac]['last_seen'] = ZuluTime.get_timestamp()
+
+        return stub
+
+    def get_network_stub2(self):
         network_id = self.network_info.network_string
         mac = self.network_info.mac
         ip = self.network_info.ip

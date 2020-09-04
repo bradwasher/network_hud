@@ -2,6 +2,7 @@ import npyscreen
 import re
 from zulu_time import ZuluTime
 from active_scanner import ActiveScanner
+import time
 
 
 class TUIApp(npyscreen.StandardApp):
@@ -29,16 +30,9 @@ class TUIApp(npyscreen.StandardApp):
 class NetworkList(npyscreen.MultiLineAction):
     def __init__(self, *args, **keywords):
         super(NetworkList, self).__init__(*args, **keywords)
-        #self.add_handlers({
-        #    "^A": self.when_add_record,
-        #    "^D": self.when_delete_record
-        #})
 
         self.networks = []
         self.values = self.networks
-
-    #def display_value(self, vl):
-    #    return "%s, %s" % (vl[1], vl[2])
 
     def actionHighlighted(self, act_on_this, key_press):
         self.parent.current_network_id = act_on_this
@@ -62,13 +56,13 @@ class NetworkDevices(npyscreen.GridColTitles):
         # check for devices not seen in a while
         if re.search("[0-9][0-9]m", cell_display_value):
             actual_cell.color = 'CAUTION'
-        elif re.search("[0-9][0-9]h", cell_display_value):
+        elif re.search("[0-9]h", cell_display_value):
             actual_cell.color = 'DANGER'
         elif cell_display_value == 'Yes':
             actual_cell.color = 'GOOD'
 
         # check for network devices
-        elif cell_display_value == 'Mikrotik' or cell_display_value[:5] == 'Cisco' or cell_display_value == 'Netgear' or cell_display_value == 'Linksys' or cell_display_value[:7] == 'Tp-Link':
+        elif cell_display_value == 'Mikrotik' or cell_display_value[:5] == 'Cisco' or cell_display_value == 'Netgear' or cell_display_value == 'Linksys' or cell_display_value[:7] == 'Tp-Link' or cell_display_value == 'Synology':
             actual_cell.color = 'GOOD'
 
         # check for 'None' in ip address
@@ -106,13 +100,13 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
         y, x = self.useable_space()
 
         # add modules
-        self.interface_info = self.add(InterfaceInfo, name='', relx=2, rely=2, max_height=3)
+        self.interface_info = self.add(InterfaceInfo, name='Interface Info', relx=2, rely=2, max_height=3)
 
-        self.device_info = self.add(DeviceInfo, name='', relx=2, rely=5, max_height=8)
+        self.device_info = self.add(DeviceInfo, name='Device Info', relx=2, rely=5, max_height=8)
 
-        self.network_list = self.add(NetworkListBox, name='Networks', relx=2, rely=13, max_width=20)
+        self.network_list = self.add(NetworkListBox, name='Networks', relx=2, rely=13, max_width=22)
 
-        self.network_devices = self.add(NetworkDevices, name='Local Devices', relx=25, rely=13,
+        self.network_devices = self.add(NetworkDevices, name='Local Devices', relx=27, rely=13,
                                         select_whole_line=True,
                                         default_column_number=6,
                                         col_titles=['IP', 'MAC', 'Make', 'Host Name', 'Is You', 'Last Seen'])
@@ -120,7 +114,10 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
         # create menu
         self.menu = self.add_menu(name='Menu')
         self.menu.addItemsFromList([
-            ("Execute - 'arp-scan -l'", self.arp_scan),
+            ("Run - 'arp-scan -l'", self.arp_scan),
+            ("Run - 'nmap --top-ports 1000'", self.nmap_1000),
+            ("Run - 'nmap -sU --top-ports 1000'", self.nmap_topports_udp),
+            ("Run - 'nmap -sTU -p80,8080,443,8291,8292,9281'", self.nmap_mikrotik),
             ("Cancel", self.menu_cancel)
         ])
 
@@ -129,13 +126,46 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
         #self.network_devices.add_handlers({curses.ascii.NL: self.grid_selection})
         #self.network_devices.when_cursor_moved = curses.beep
 
-        #display collected data
+        # display collected data
         self.current_network_id = None
         self.display_data()
 
     # menu event handlers
     def arp_scan(self):
         ActiveScanner.arp_scan_local()
+        message = f"Ran: 'arp-scan -l'"
+        npyscreen.notify(message, title='Notification')
+        time.sleep(1.2)  # needed to have it show up for a visible amount of time
+
+    def nmap_1000(self):
+        ip = self.get_selected_ip()
+        message = 'Error: Invalid IP Address'
+        if ip is not None:
+            ActiveScanner.nmap_1000(ip)
+            message = f"Ran: 'nmap -nn --top-ports 1000 {ip}'"
+
+        npyscreen.notify(message, title='Notification')
+        time.sleep(1.2)  # needed to have it show up for a visible amount of time
+
+    def nmap_topports_udp(self):
+        ip = self.get_selected_ip()
+        message = 'Error: Invalid IP Address'
+        if ip is not None:
+            ActiveScanner.nmap_topports_udp(ip)
+            message = f"Ran: 'nmap -nn -sU --top-ports 1000 {ip}'"
+
+        npyscreen.notify(message, title='Notification')
+        time.sleep(1.2)  # needed to have it show up for a visible amount of time
+
+    def nmap_mikrotik(self):
+        ip = self.get_selected_ip()
+        message = 'Error: Invalid IP Address'
+        if ip is not None:
+            ActiveScanner.nmap_mikrotik(ip)
+            message = f"Ran: 'nmap - nn - p80, 8080, 443, 8291, 8292, 9281 {ip}'"
+
+        npyscreen.notify(message, title='Notification')
+        time.sleep(1.2)  # needed to have it show up for a visible amount of time
 
     def menu_cancel(self):
         pass
@@ -147,6 +177,7 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
         if (now - self.time_stamp).total_seconds() >= self.parentApp.interval:
             self.time_stamp = now
             self.display_data()
+            self.update_menu()
 
     # display collected data in widgets
     def display_data(self):
@@ -174,9 +205,24 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
             mac_address = self.network_devices.values[row][1]
             manufacturer = self.network_devices.values[row][2]
             host_name = self.network_devices.values[row][3]
-            self.device_info.name = f'{mac_address} - {manufacturer}' if host_name == '------------' else f'{mac_address} - {host_name}'
+            self.device_info.name = f'{mac_address} - {manufacturer}' if host_name is None else f'{mac_address} - {host_name}'
             self.device_info.value = self.parentApp.data_collection.get_local_device_summary(self.current_network_id, mac_address)
             self.device_info.display()
+
+    def get_selected_ip(self):
+        ip_address = None
+        xy = self.network_devices.edit_cell
+        if xy is not None:
+            row = xy[0]
+            #ip_value = str(self.network_devices.values[row][0]).replace('-', '').strip()
+            ip_value = self.network_devices.values[row][0]
+
+            ip_address = ip_value
+
+        return ip_address
+
+    def update_menu(self):
+        self.menu.items = None
 
     # exit TUI
     def exit_func(self, _input):

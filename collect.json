@@ -1,0 +1,362 @@
+{
+  "local_networks": {
+    "172.27.162.0/26": {
+      "network_id": "172.27.162.0/26",
+      "interface": "eno1",
+      "ip_address": "172.27.162.54",
+      "mac_address": "54:b2:03:08:44:24",
+      "devices": {
+        "54:b2:03:08:44:24": {
+          "mac_address": "54:b2:03:08:44:24",
+          "ip_address": "172.27.162.54",
+          "manufacturer": "Pegatron",
+          "connection_type": "",
+          "is_you": true,
+          "protocols_seen": [
+            "bootpc"
+          ],
+          "open_tcp_ports": [],
+          "open_udp_ports": [
+            68
+          ],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:35.837004"
+        },
+        "00:08:2f:bd:13:04": {
+          "mac_address": "00:08:2f:bd:13:04",
+          "ip_address": null,
+          "manufacturer": "Cisco",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [],
+          "open_tcp_ports": [],
+          "open_udp_ports": [],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:35.001126"
+        },
+        "28:f1:0e:26:40:92": {
+          "mac_address": "28:f1:0e:26:40:92",
+          "ip_address": "172.27.162.36",
+          "manufacturer": "Dell",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [],
+          "open_tcp_ports": [],
+          "open_udp_ports": [],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:34.539603"
+        },
+        "00:50:56:a7:20:0a": {
+          "mac_address": "00:50:56:a7:20:0a",
+          "ip_address": "172.27.162.55",
+          "manufacturer": "VMware",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [
+            "netbios-ns"
+          ],
+          "open_tcp_ports": [],
+          "open_udp_ports": [
+            137
+          ],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:35.811888"
+        },
+        "ec:f4:bb:6b:23:76": {
+          "mac_address": "ec:f4:bb:6b:23:76",
+          "ip_address": "172.27.162.41",
+          "manufacturer": "Dell",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [],
+          "open_tcp_ports": [],
+          "open_udp_ports": [],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:34.853464"
+        },
+        "ec:f4:bb:6b:25:01": {
+          "mac_address": "ec:f4:bb:6b:25:01",
+          "ip_address": "172.27.162.30",
+          "manufacturer": "Dell",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [],
+          "open_tcp_ports": [],
+          "open_udp_ports": [],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:35.838319"
+        },
+        "28:f1:0e:26:41:28": {
+          "mac_address": "28:f1:0e:26:41:28",
+          "ip_address": "172.27.162.26",
+          "manufacturer": "Dell",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [],
+          "open_tcp_ports": [],
+          "open_udp_ports": [],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:35.948362"
+        },
+        "ec:f4:bb:6c:f7:15": {
+          "mac_address": "ec:f4:bb:6c:f7:15",
+          "ip_address": "172.27.162.34",
+          "manufacturer": "Dell",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [
+            "mdns"
+          ],
+          "open_tcp_ports": [],
+          "open_udp_ports": [
+            5353
+          ],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:32.562183"
+        },
+        "ec:f4:bb:6d:02:72": {
+          "mac_address": "ec:f4:bb:6d:02:72",
+          "ip_address": "172.27.162.28",
+          "manufacturer": "Dell",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [],
+          "open_tcp_ports": [],
+          "open_udp_ports": [],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:35.717928"
+        },
+        "00:0c:29:d1:54:a7": {
+          "mac_address": "00:0c:29:d1:54:a7",
+          "ip_address": "172.27.162.47",
+          "manufacturer": "VMware",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [
+            "netbios-ns"
+          ],
+          "open_tcp_ports": [],
+          "open_udp_ports": [
+            137
+          ],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:34.743711"
+        },
+        "58:ac:78:22:6e:78": {
+          "mac_address": "58:ac:78:22:6e:78",
+          "ip_address": "172.27.162.62",
+          "manufacturer": "Cisco",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [
+            "bootps"
+          ],
+          "open_tcp_ports": [],
+          "open_udp_ports": [
+            67
+          ],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:35.812525"
+        },
+        "34:e6:d7:12:7c:69": {
+          "mac_address": "34:e6:d7:12:7c:69",
+          "ip_address": "172.27.162.22",
+          "manufacturer": "Dell",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [
+            "mdns"
+          ],
+          "open_tcp_ports": [],
+          "open_udp_ports": [
+            5353
+          ],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:33.527643"
+        },
+        "cc:40:d0:77:63:f9": {
+          "mac_address": "cc:40:d0:77:63:f9",
+          "ip_address": null,
+          "manufacturer": "Netgear",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [],
+          "open_tcp_ports": [],
+          "open_udp_ports": [],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:34.734447"
+        },
+        "00:11:32:68:ad:5f": {
+          "mac_address": "00:11:32:68:ad:5f",
+          "ip_address": "172.27.162.60",
+          "manufacturer": "Synology",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [
+            "netbios-ns"
+          ],
+          "open_tcp_ports": [],
+          "open_udp_ports": [
+            137
+          ],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:34.745217"
+        },
+        "00:50:56:a7:69:ab": {
+          "mac_address": "00:50:56:a7:69:ab",
+          "ip_address": "172.27.162.12",
+          "manufacturer": "VMware",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [],
+          "open_tcp_ports": [],
+          "open_udp_ports": [],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:35.940053"
+        },
+        "34:e6:d7:12:7c:25": {
+          "mac_address": "34:e6:d7:12:7c:25",
+          "ip_address": "172.27.162.9",
+          "manufacturer": "Dell",
+          "connection_type": null,
+          "is_you": false,
+          "protocols_seen": [],
+          "open_tcp_ports": [],
+          "open_udp_ports": [],
+          "data_collect": [],
+          "last_seen": "2020-08-19 11:19:35.768606"
+        }
+      }
+    }
+  },
+  "external_devices": {
+    "52.27.83.248": {
+      "mac_address": "58:ac:78:22:6e:78",
+      "ip_address": "52.27.83.248",
+      "manufacturer": "Cisco",
+      "connection_type": null,
+      "is_you": false,
+      "protocols_seen": [
+        "https"
+      ],
+      "open_tcp_ports": [
+        443
+      ],
+      "open_udp_ports": [],
+      "data_collect": [],
+      "last_seen": "2020-08-19 11:19:31.033067"
+    },
+    "172.217.15.68": {
+      "mac_address": "58:ac:78:22:6e:78",
+      "ip_address": "172.217.15.68",
+      "manufacturer": "Cisco",
+      "connection_type": null,
+      "is_you": false,
+      "protocols_seen": [
+        "https"
+      ],
+      "open_tcp_ports": [
+        443
+      ],
+      "open_udp_ports": [],
+      "data_collect": [],
+      "last_seen": "2020-08-19 11:19:32.880595"
+    },
+    "172.217.197.139": {
+      "mac_address": "58:ac:78:22:6e:78",
+      "ip_address": "172.217.197.139",
+      "manufacturer": "Cisco",
+      "connection_type": null,
+      "is_you": false,
+      "protocols_seen": [
+        "https"
+      ],
+      "open_tcp_ports": [
+        443
+      ],
+      "open_udp_ports": [],
+      "data_collect": [],
+      "last_seen": "2020-08-19 11:19:31.642405"
+    },
+    "172.217.13.74": {
+      "mac_address": "58:ac:78:22:6e:78",
+      "ip_address": "172.217.13.74",
+      "manufacturer": "Cisco",
+      "connection_type": null,
+      "is_you": false,
+      "protocols_seen": [
+        "https"
+      ],
+      "open_tcp_ports": [
+        443
+      ],
+      "open_udp_ports": [],
+      "data_collect": [],
+      "last_seen": "2020-08-19 11:19:35.775608"
+    },
+    "192.0.73.2": {
+      "mac_address": "58:ac:78:22:6e:78",
+      "ip_address": "192.0.73.2",
+      "manufacturer": "Cisco",
+      "connection_type": null,
+      "is_you": false,
+      "protocols_seen": [
+        "https"
+      ],
+      "open_tcp_ports": [
+        443
+      ],
+      "open_udp_ports": [],
+      "data_collect": [],
+      "last_seen": "2020-08-19 11:19:35.779649"
+    },
+    "172.217.8.1": {
+      "mac_address": "58:ac:78:22:6e:78",
+      "ip_address": "172.217.8.1",
+      "manufacturer": "Cisco",
+      "connection_type": null,
+      "is_you": false,
+      "protocols_seen": [
+        "https"
+      ],
+      "open_tcp_ports": [
+        443
+      ],
+      "open_udp_ports": [],
+      "data_collect": [],
+      "last_seen": "2020-08-19 11:19:35.778439"
+    },
+    "104.16.27.34": {
+      "mac_address": "58:ac:78:22:6e:78",
+      "ip_address": "104.16.27.34",
+      "manufacturer": "Cisco",
+      "connection_type": null,
+      "is_you": false,
+      "protocols_seen": [
+        "https"
+      ],
+      "open_tcp_ports": [
+        443
+      ],
+      "open_udp_ports": [],
+      "data_collect": [],
+      "last_seen": "2020-08-19 11:19:35.779029"
+    },
+    "151.101.1.69": {
+      "mac_address": "58:ac:78:22:6e:78",
+      "ip_address": "151.101.1.69",
+      "manufacturer": "Cisco",
+      "connection_type": null,
+      "is_you": false,
+      "protocols_seen": [
+        "https"
+      ],
+      "open_tcp_ports": [
+        443
+      ],
+      "open_udp_ports": [],
+      "data_collect": [],
+      "last_seen": "2020-08-19 11:19:35.780073"
+    }
+  }
+}

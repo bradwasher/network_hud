@@ -30,26 +30,28 @@ class DataCollection():
     def get_local_device_tcp_ports(self, network_id, mac_address):
         try:
             device = self.collect['local_networks'][network_id]['devices'][mac_address]
-            tcp_ports = ', '.join([str(x) for x in device['open_tcp_ports']])
-            return tcp_ports
+            tcp_ports = sorted([x for x in device['open_tcp_ports'] if x is not None])
+            tcp_ports_string = ', '.join(str(x) for x in tcp_ports)
+            return tcp_ports_string
         except:
-            return 'no tcp'
+            return 'tcp collection error'
 
     def get_local_device_udp_ports(self, network_id, mac_address):
-        #try:
-        device = self.collect['local_networks'][network_id]['devices'][mac_address]
-        udp_ports = ', '.join([str(x) for x in device['open_udp_ports']])
-        return udp_ports
-        #except:
-        #    return 'no udp'
+        try:
+            device = self.collect['local_networks'][network_id]['devices'][mac_address]
+            udp_ports = sorted([x for x in device['open_udp_ports'] if x is not None])
+            udp_ports_string = ', '.join(str(x) for x in udp_ports)
+            return udp_ports_string
+        except:
+            return 'udp collection error'
 
     def get_local_device_protocols(self, network_id, mac_address):
         try:
             device = self.collect['local_networks'][network_id]['devices'][mac_address]
-            protocols = ', '.join(device['protocols_seen'])
+            protocols = ', '.join(sorted([str(x) for x in device['protocols_seen']]))
             return protocols
-        except:
-            return ''
+        except Exception as ex:
+            return 'protocol collection error'
 
     def get_local_device_data(self, network_id, mac_address):
         try:

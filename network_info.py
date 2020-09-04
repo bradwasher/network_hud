@@ -23,7 +23,7 @@ class NetworkInfo(threading.Thread):
         self.ip = None
         self.hostname = None
         self.network = None
-        self. network_string = None
+        self.network_string = None
         self.network_broadcast = None
         self.is_private = None
         self.manufacturer = None
@@ -50,12 +50,11 @@ class NetworkInfo(threading.Thread):
         self.hostname = self.get_hostname()
         self.network = self.get_network()
         self.network_string = str(self.network)
-        self.network_broadcast = self.network.broadcast_address
+        self.network_broadcast = self.network.broadcast_address if self.network is not None else None
         self.is_private = self.get_isprivate(self.network)
         self.manufacturer = self.oui_lookup.get_manufacturer(self.mac)
-        self.network_hosts = list(self.network.hosts())
-        self.network_hosts_string = self.get_network_hosts_string(str(self.network_hosts[0]),
-                                                                  str(self.network_hosts[-1]))
+        self.network_hosts = list(self.network.hosts()) if self.network is not None else []
+        self.network_hosts_string = self.get_network_hosts_string(str(self.network_hosts[0]), str(self.network_hosts[-1])) if len(self.network_hosts) > 0 else ''
 
     def get_interface_exists(self):
         return True if os.path.isdir(f'/sys/class/net/{self.interface_name}') else False
@@ -67,27 +66,37 @@ class NetworkInfo(threading.Thread):
         return os.popen(f'cat /sys/class/net/{self.interface_name}/address').read().strip()
 
     def get_ip(self):
-        return os.popen(f'ip addr show {self.interface_name}').read().split("inet ")[1].split("/")[0]
+        try:
+            return os.popen(f'ip addr show {self.interface_name}').read().split("inet ")[1].split("/")[0]
+        except:
+            return None
+
 
     def get_network(self):
-        addr = os.popen(f'ip addr show {self.interface_name}').read().split("inet ")[1].split()[0]
-        ip_interface = IPv4Interface(addr)
-        return ip_interface.network
+        try:
+            addr = os.popen(f'ip addr show {self.interface_name}').read().split("inet ")[1].split()[0]
+            ip_interface = IPv4Interface(addr)
+            return ip_interface.network
+        except:
+            return None
 
     def get_hostname(self):
-        return os.popen(f'hostname').read().strip()
+        try:
+            return os.popen(f'hostname').read().strip()
+        except:
+            return None
 
     def ip_in_network(self, ip):
         address = IPv4Address(ip)
         return address in self.network_hosts
 
     def get_interface_string(self):
-        description = f'IP: {self.ip}\t\tMAC: {self.mac}\t\tNetwork ID: {self.network_string}\t\tHosts: {self.network_hosts_string}\t\tBroadcasts: {self.network_broadcast}'
+        description = f'IP: {self.ip}\t\tMAC: {self.mac}\t\tNetwork ID: {self.network_string}\t\tHosts: {self.network_hosts_string}\t\tBroadcast: {self.network_broadcast}'
         return description
 
     @staticmethod
     def get_isprivate(network):
-        return True if IPv4Network(network).is_private else False
+        return True if network is not None and IPv4Network(network).is_private else False
 
     @staticmethod
     def get_network_hosts_string(s1, s2):
