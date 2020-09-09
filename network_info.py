@@ -32,6 +32,9 @@ class NetworkInfo(threading.Thread):
 
         self.update_values()
 
+        # save original mac in order to switch back if mac spoofing is used
+        self.original_mac = self.mac
+
         self._running = True  # setting the thread running to true
 
     def run(self):
@@ -93,6 +96,17 @@ class NetworkInfo(threading.Thread):
     def get_interface_string(self):
         description = f'IP: {self.ip}\t\tMAC: {self.mac}\t\tNetwork ID: {self.network_string}\t\tHosts: {self.network_hosts_string}\t\tBroadcast: {self.network_broadcast}'
         return description
+
+
+    def revert_mac(self):
+        self.change_mac(self.original_mac)
+
+
+    def change_mac(self, mac):
+        try:
+            return os.popen(f'ifconfig {self.interface_name} hw ether {mac}')
+        except:
+            return None
 
     @staticmethod
     def get_isprivate(network):

@@ -13,7 +13,7 @@ class TUIApp(npyscreen.StandardApp):
         self.interval = interval
 
     def onStart(self):
-        self.addForm("MAIN", MainForm, name="Network HUD")
+        self.addForm("MAIN", MainForm, name="sneakyPETE")
 
     def while_waiting(self):
         pass
@@ -112,12 +112,15 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
                                         col_titles=['IP', 'MAC', 'Make', 'Host Name', 'Is You', 'Last Seen'])
 
         # create menu
+        mac_address = self.parentApp.network_info.original_mac
         self.menu = self.add_menu(name='Menu')
         self.menu.addItemsFromList([
             ("Run - 'arp-scan -l'", self.arp_scan),
             ("Run - 'nmap --top-ports 1000'", self.nmap_1000),
             ("Run - 'nmap -sU --top-ports 1000'", self.nmap_topports_udp),
             ("Run - 'nmap -sTU -p80,8080,443,8291,8292,9281'", self.nmap_mikrotik),
+            ("Switch MAC", self.change_mac),
+            (f"Revert MAC - {mac_address}", self.revert_mac),
             ("Cancel", self.menu_cancel)
         ])
 
@@ -167,6 +170,19 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
         npyscreen.notify(message, title='Notification')
         time.sleep(1.2)  # needed to have it show up for a visible amount of time
 
+    def change_mac(self):
+        mac = self.get_selected_mac()
+        message = 'Error: Invalid MAC Address'
+        if mac is not None:
+            self.parentApp.network_info.change_mac(mac)
+            message = f"MAC changed to: {mac}"
+
+        npyscreen.notify(message, title='Notification')
+        time.sleep(1.2)  # needed to have it show up for a visible amount of time
+
+    def revert_mac(self):
+        self.parentApp.network_info.revert_mac()
+
     def menu_cancel(self):
         pass
 
@@ -187,7 +203,10 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
         self.interface_info.display()
 
         #display network list
-        self.network_list.values = self.parentApp.data_collection.get_local_networks()
+        networks = self.parentApp.data_collection.get_local_networks()
+        networks.append('External Devices')
+        self.network_list.values = networks
+
         self.network_list.display()
 
         if self.current_network_id is None and len(self.network_list.values) > 0:
@@ -195,19 +214,30 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
 
         #display network devices
         if self.current_network_id is not None:
-            self.network_devices.values = self.parentApp.data_collection.get_local_network_devices(self.current_network_id)
+            if self.current_network_id == 'External Devices':
+                self.network_devices.values = self.parentApp.data_collection.get_external_devices()
+            else:
+                self.network_devices.values = self.parentApp.data_collection.get_local_network_devices(self.current_network_id)
             self.network_devices.display()
 
         #display captured data for device
         xy = self.network_devices.edit_cell
         if xy is not None:
-            row = xy[0]
-            mac_address = self.network_devices.values[row][1]
-            manufacturer = self.network_devices.values[row][2]
-            host_name = self.network_devices.values[row][3]
-            self.device_info.name = f'{mac_address} - {manufacturer}' if host_name is None else f'{mac_address} - {host_name}'
-            self.device_info.value = self.parentApp.data_collection.get_local_device_summary(self.current_network_id, mac_address)
-            self.device_info.display()
+            try:
+                row = xy[0]
+                mac_address = self.network_devices.values[row][1]
+                manufacturer = self.network_devices.values[row][2]
+                host_name = self.network_devices.values[row][3]
+                self.device_info.name = f'{mac_address} - {manufacturer}' if host_name is None else f'{mac_address} - {host_name}'
+                if self.current_network_id == 'External Devices':
+                    ip_address = self.network_devices.values[row][0]
+                    self.device_info.name = ip_address
+                    self.device_info.value = self.parentApp.data_collection.get_external_device_summary(ip_address)
+                else:
+                    self.device_info.value = self.parentApp.data_collection.get_local_device_summary(self.current_network_id, mac_address)
+                self.device_info.display()
+            except:
+                pass
 
     def get_selected_ip(self):
         ip_address = None
@@ -220,6 +250,17 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
             ip_address = ip_value
 
         return ip_address
+
+    def get_selected_mac(self):
+        mac_address = None
+        xy = self.network_devices.edit_cell
+        if xy is not None:
+            row = xy[0]
+            mac_value = self.network_devices.values[row][1]
+
+            mac_address = mac_value
+
+        return mac_address
 
     def update_menu(self):
         self.menu.items = None
